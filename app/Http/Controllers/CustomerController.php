@@ -2,31 +2,54 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Product;
 use Illuminate\Http\Request;
 
 class CustomerController extends Controller
 {
     public function home()
     {
-        // Nanti di sini kamu bisa menambahkan logika mengambil data produk dari database
-        // $products = Product::latest()->take(4)->get();
-        // return view('customer.home', compact('products'));
-
-        return view('customer.home');
+        // Mengambil 4 produk terbaru untuk di Beranda
+        $products = Product::take(4)->get(); 
+        return view('customer.home', compact('products'));
     }
 
-    public function tracking($order_id)
+    // 1. NAMA METHOD DIUBAH DARI 'products' MENJADI 'shop'
+    public function shop(Request $request)
     {
-        // Nanti kamu bisa mencari data pesanan berdasarkan ID
-        // $order = Order::where('order_number', $order_id)->firstOrFail();
-        // return view('customer.tracking', compact('order'));
+        $query = Product::query();
 
+        // Logika Pencarian (Search)
+        if ($request->has('search') && $request->search != '') {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        // Logika Filter Kategori
+        if ($request->has('category') && $request->category != 'all') {
+            $query->where('category', $request->category); 
+        }
+
+        $products = $query->get();
+
+        // 2. NAMA VIEW DIUBAH DARI 'customer.products' MENJADI 'customer.shop'
+        return view('customer.shop', compact('products'));
+    }
+
+        public function categories(){
+        return view('customer.categories');
+    }
+
+        public function about(){
+        return view('customer.about');
+    }
+
+        public function contact(){
+        return view('customer.contact');
+    }
+
+    public function tracking($order_id = null)
+    {
+        // Logika pencarian pesanan berdasarkan order_id
         return view('customer.tracking', compact('order_id'));
-    }
-
-      public function products()
-    {
-        // Memanggil file resources/views/customer/products.blade.php
-        return view('customer.products');
     }
 }

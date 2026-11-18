@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('couriers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->unsignedBigInteger('user_id')->nullable();
             $table->string('phone');
             $table->string('vehicle_type')->default('motor');
             $table->string('vehicle_plate')->nullable();

@@ -26,7 +26,12 @@ $cartCount = count($cart) > 0 ? array_sum(array_column($cart, 'quantity')) : 0;
             
             <!-- 🌟 LOGIKA AUTENTIKASI -->
             @auth
-                <!-- Jika Sudah Login: Tampilkan Tombol Logout -->
+                <!-- Jika Sudah Login: link sesuai role + Tombol Logout -->
+                @php $authUser = auth()->user(); @endphp
+                <a href="{{ $authUser->role === 'customer' ? route('tracking') : route($authUser->dashboardRoute()) }}"
+                   class="hidden sm:flex items-center px-3 py-1.5 text-[12px] font-semibold text-slate-500 hover:text-slate-900">
+                    {{ $authUser->role === 'customer' ? 'My Orders' : 'Dashboard' }}
+                </a>
                 <form action="{{ route('logout') }}" method="POST" class="hidden sm:block m-0">
                     @csrf
                     <button type="submit" class="flex items-center gap-1.5 px-4 py-1.5 bg-red-50 text-red-600 text-[11px] font-bold rounded-full hover:bg-red-100 hover:text-red-700 transition-all duration-300">

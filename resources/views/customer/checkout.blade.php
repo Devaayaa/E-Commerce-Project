@@ -14,8 +14,12 @@
         <p class="text-slate-500">Complete your order safely and quickly.</p>
     </div>
 
+    <x-flash />
+
     <form action="{{ route('checkout.store') }}" method="POST">
         @csrf
+        <input type="hidden" name="shipping_latitude" id="shipping_latitude" value="{{ old('shipping_latitude', $customer->latitude) }}">
+        <input type="hidden" name="shipping_longitude" id="shipping_longitude" value="{{ old('shipping_longitude', $customer->longitude) }}">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
             <!-- LEFT COLUMN: Address & Payment -->
@@ -32,16 +36,16 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 mb-2">Recipient Name</label>
-                                <input type="text" name="name" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm" placeholder="Full name" required>
+                                <input type="text" name="name" value="{{ old('name', auth()->user()->name) }}" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm" placeholder="Full name" required>
                             </div>
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 mb-2">Phone Number</label>
-                                <input type="tel" name="phone" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm" placeholder="0812xxxxxx" required>
+                                <input type="tel" name="phone" value="{{ old('phone', $customer->phone) }}" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm" placeholder="0812xxxxxx" required>
                             </div>
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-2">Full Address</label>
-                            <textarea name="address" rows="3" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm" placeholder="Street, RT/RW, District, City, Postal Code" required></textarea>
+                            <textarea name="address" rows="3" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm" placeholder="Street, RT/RW, District, City, Postal Code" required>{{ old('address', $customer->address) }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -56,7 +60,7 @@
                     <div class="space-y-3">
                         <!-- Bank Transfer -->
                         <label class="relative flex items-center p-4 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 hover:border-slate-300 transition-all has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/50 has-[:checked]:ring-1 has-[:checked]:ring-blue-500">
-                            <input type="radio" name="payment_method" value="bank_transfer" class="w-5 h-5 text-blue-600 border-slate-300 focus:ring-blue-500" checked>
+                            <input type="radio" name="payment_method" value="bank_transfer" class="w-5 h-5 text-blue-600 border-slate-300 focus:ring-blue-500" @checked(old('payment_method', 'bank_transfer') === 'bank_transfer')>
                             <div class="ml-4 flex items-center gap-3">
                                 <span class="text-2xl">🏦</span>
                                 <div>
@@ -68,7 +72,7 @@
 
                         <!-- E-Wallet -->
                         <label class="relative flex items-center p-4 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 hover:border-slate-300 transition-all has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/50 has-[:checked]:ring-1 has-[:checked]:ring-blue-500">
-                            <input type="radio" name="payment_method" value="e_wallet" class="w-5 h-5 text-blue-600 border-slate-300 focus:ring-blue-500">
+                            <input type="radio" name="payment_method" value="e_wallet" class="w-5 h-5 text-blue-600 border-slate-300 focus:ring-blue-500" @checked(old('payment_method') === 'e_wallet')>
                             <div class="ml-4 flex items-center gap-3">
                                 <span class="text-2xl">📱</span>
                                 <div>
@@ -80,7 +84,7 @@
 
                         <!-- Credit Card -->
                         <label class="relative flex items-center p-4 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 hover:border-slate-300 transition-all has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/50 has-[:checked]:ring-1 has-[:checked]:ring-blue-500">
-                            <input type="radio" name="payment_method" value="credit_card" class="w-5 h-5 text-blue-600 border-slate-300 focus:ring-blue-500">
+                            <input type="radio" name="payment_method" value="credit_card" class="w-5 h-5 text-blue-600 border-slate-300 focus:ring-blue-500" @checked(old('payment_method') === 'credit_card')>
                             <div class="ml-4 flex items-center gap-3">
                                 <span class="text-2xl">💳</span>
                                 <div>
@@ -92,7 +96,7 @@
 
                         <!-- COD -->
                         <label class="relative flex items-center p-4 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 hover:border-slate-300 transition-all has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/50 has-[:checked]:ring-1 has-[:checked]:ring-blue-500">
-                            <input type="radio" name="payment_method" value="cod" class="w-5 h-5 text-blue-600 border-slate-300 focus:ring-blue-500">
+                            <input type="radio" name="payment_method" value="cod" class="w-5 h-5 text-blue-600 border-slate-300 focus:ring-blue-500" @checked(old('payment_method') === 'cod')>
                             <div class="ml-4 flex items-center gap-3">
                                 <span class="text-2xl">🚚</span>
                                 <div>
@@ -177,6 +181,16 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // Ambil koordinat pengiriman (opsional) agar kurir & peta pelacakan akurat
+        const latInput = document.getElementById('shipping_latitude');
+        const lngInput = document.getElementById('shipping_longitude');
+        if (latInput && lngInput && !latInput.value && 'geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                latInput.value = pos.coords.latitude;
+                lngInput.value = pos.coords.longitude;
+            }, () => {}, { timeout: 8000 });
+        }
+
         if (typeof gsap !== 'undefined') {
             gsap.from(".checkout-anim", {
                 y: 40,

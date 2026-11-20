@@ -22,12 +22,14 @@
             <p class="text-slate-800 text-sm">Sign in to continue your curated experience.</p>
         </div>
 
+        <x-flash />
+
         <form action="{{ route('login.post') }}" method="POST" class="space-y-5">
             @csrf
             
             <div>
                 <label class="block text-sm font-bold text-slate-700 mb-2">Email Address</label>
-                <input type="email" name="email" placeholder="you@example.com" class="w-full px-5 py-3.5 bg-white/60 border border-white/60 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/30 transition-all text-slate-900 placeholder-slate-500" required>
+                <input type="email" name="email" value="{{ old('email') }}" placeholder="you@example.com" class="w-full px-5 py-3.5 bg-white/60 border border-white/60 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/30 transition-all text-slate-900 placeholder-slate-500" required>
             </div>
 
             <div>
@@ -39,7 +41,7 @@
             </div>
 
             <div class="flex items-center gap-2 mt-2">
-                <input type="checkbox" id="remember" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 bg-white/50">
+                <input type="checkbox" id="remember" name="remember" value="1" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 bg-white/50">
                 <label for="remember" class="text-sm text-slate-700 font-medium cursor-pointer">Remember me</label>
             </div>
 

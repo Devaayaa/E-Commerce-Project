@@ -13,6 +13,18 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    public const ROLE_CUSTOMER = 'customer';
+    public const ROLE_SELLER = 'seller';
+    public const ROLE_COURIER = 'courier';
+    public const ROLE_ADMIN = 'admin';
+
+    public const ROLES = [
+        self::ROLE_CUSTOMER,
+        self::ROLE_SELLER,
+        self::ROLE_COURIER,
+        self::ROLE_ADMIN,
+    ];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -23,6 +35,14 @@ class User extends Authenticatable
         'email',
         'password',
         'google_id',
+        'role',
+    ];
+
+    /**
+     * Role tidak boleh terisi dari input user biasa; default dari database = customer.
+     */
+    protected $attributes = [
+        'role' => self::ROLE_CUSTOMER,
     ];
 
     /**
@@ -48,18 +68,40 @@ class User extends Authenticatable
         ];
     }
 
-    public function customer() 
-    { 
-        return $this->hasOne(Customer::class); 
+    public function customer()
+    {
+        return $this->hasOne(Customer::class);
     }
 
-    public function seller()   
-    { 
-        return $this->hasOne(Seller::class); 
+    public function seller()
+    {
+        return $this->hasOne(Seller::class);
     }
 
-    public function courier()  
-    { 
-        return $this->hasOne(Courier::class); 
+    public function courier()
+    {
+        return $this->hasOne(Courier::class);
+    }
+
+    public function hasRole(string ...$roles): bool
+    {
+        return in_array($this->role, $roles, true);
+    }
+
+    /** Nama route tujuan setelah login sesuai role. */
+    public function dashboardRoute(): string
+    {
+        return match ($this->role) {
+            self::ROLE_ADMIN => 'admin.dashboard',
+            self::ROLE_SELLER => 'seller.dashboard',
+            self::ROLE_COURIER => 'courier.dashboard',
+            default => 'home',
+        };
+    }
+
+    /** Pastikan user punya profil pelanggan (dibutuhkan untuk membuat order). */
+    public function ensureCustomerProfile(): Customer
+    {
+        return $this->customer()->firstOrCreate([]);
     }
 }

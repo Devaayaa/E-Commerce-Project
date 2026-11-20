@@ -22,22 +22,24 @@
             <p class="text-slate-800 text-sm">Create an account to discover exceptional items.</p>
         </div>
 
+        <x-flash />
+
         <form action="{{ route('register.post') }}" method="POST" class="space-y-4">
             @csrf
             
             <div>
                 <label class="block text-sm font-bold text-slate-700 mb-2">Full Name</label>
-                <input type="text" name="name" placeholder="Your name" class="w-full px-5 py-3.5 bg-white/60 border border-white/60 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/30 transition-all text-slate-900 placeholder-slate-500" required>
+                <input type="text" name="name" value="{{ old('name') }}" placeholder="Your name" class="w-full px-5 py-3.5 bg-white/60 border border-white/60 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/30 transition-all text-slate-900 placeholder-slate-500" required>
             </div>
 
             <div>
                 <label class="block text-sm font-bold text-slate-700 mb-2">Email Address</label>
-                <input type="email" name="email" placeholder="you@example.com" class="w-full px-5 py-3.5 bg-white/60 border border-white/60 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/30 transition-all text-slate-900 placeholder-slate-500" required>
+                <input type="email" name="email" value="{{ old('email') }}" placeholder="you@example.com" class="w-full px-5 py-3.5 bg-white/60 border border-white/60 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/30 transition-all text-slate-900 placeholder-slate-500" required>
             </div>
 
             <div>
                 <label class="block text-sm font-bold text-slate-700 mb-2">Password</label>
-                <input type="password" name="password" placeholder="Create a strong password" class="w-full px-5 py-3.5 bg-white/60 border border-white/60 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/30 transition-all text-slate-900 placeholder-slate-500" required>
+                <input type="password" name="password" placeholder="Minimum 8 characters" minlength="8" class="w-full px-5 py-3.5 bg-white/60 border border-white/60 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/30 transition-all text-slate-900 placeholder-slate-500" required>
             </div>
 
             <button type="submit" class="w-full py-4 bg-slate-900 text-white font-bold rounded-xl hover:bg-blue-600 transition-all duration-300 shadow-lg hover:-translate-y-0.5 mt-4">

@@ -11,58 +11,78 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 
+// ==========================================
+// AUTENTIKASI
+// ==========================================
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
 // Route Google Login
 Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('google.login');
-Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
-
-
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('google.callback');
 
 // ==========================================
-// RUTE PELANGGAN (CUSTOMER)
+// RUTE PELANGGAN (CUSTOMER) — publik
 // ==========================================
 Route::get('/', [CustomerController::class, 'home'])->name('home');
+Route::get('/shop', [CustomerController::class, 'shop'])->name('shop');
+Route::get('/category', [CustomerController::class, 'categories'])->name('categories');
+Route::get('/about', [CustomerController::class, 'about'])->name('about');
+Route::get('/contact', [CustomerController::class, 'contact'])->name('contact');
 
-// Parameter {order_id} opsional (bisa diakses seperti /lacak/ORD-123)
-Route::get('/lacak/{order_id?}', [CustomerController::class, 'tracking'])->name('tracking');
+// Keranjang (disimpan di session, boleh diakses tanpa login)
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+Route::patch('/cart/{id}', [CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/{id}', [CartController::class, 'remove'])->name('cart.remove');
+Route::delete('/cart', [CartController::class, 'clear'])->name('cart.clear');
+
+// ==========================================
+// RUTE PELANGGAN — wajib login
+// ==========================================
+Route::middleware('auth')->group(function () {
+    // Checkout hanya untuk pelanggan
+    Route::middleware('role:customer')->group(function () {
+        Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
+        Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    });
+
+    // Pelacakan: pelanggan pemilik pesanan, penjual, kurir terkait, dan admin
+    // Parameter {order_id} opsional (bisa diakses seperti /lacak/ORD-2026-ABC123)
+    Route::get('/lacak/{order_id}/lokasi', [CustomerController::class, 'trackingLocation'])->name('tracking.location');
+    Route::get('/lacak/{order_id?}', [CustomerController::class, 'tracking'])->name('tracking');
+});
 
 // ==========================================
 // RUTE KURIR (COURIER)
 // ==========================================
-Route::get('/kurir/dashboard', [CourierController::class, 'dashboard'])->name('courier.dashboard');
+Route::middleware(['auth', 'role:courier'])->prefix('kurir')->name('courier.')->group(function () {
+    Route::get('/dashboard', [CourierController::class, 'dashboard'])->name('dashboard');
+    Route::post('/status', [CourierController::class, 'setStatus'])->name('status');
+    Route::post('/lokasi', [CourierController::class, 'updateLocation'])->name('location');
+    Route::post('/pesanan/{order}/ambil', [CourierController::class, 'pickup'])->name('pickup');
+    Route::post('/pesanan/{order}/selesai', [CourierController::class, 'deliver'])->name('deliver');
+});
 
 // ==========================================
 // RUTE PENJUAL (SELLER)
 // ==========================================
-Route::get('/penjual/dashboard', [SellerController::class, 'dashboard'])->name('seller.dashboard');
+Route::middleware(['auth', 'role:seller'])->prefix('penjual')->name('seller.')->group(function () {
+    Route::get('/dashboard', [SellerController::class, 'dashboard'])->name('dashboard');
+    Route::post('/produk', [SellerController::class, 'storeProduct'])->name('products.store');
+    Route::patch('/produk/{product}', [SellerController::class, 'updateProduct'])->name('products.update');
+    Route::delete('/produk/{product}', [SellerController::class, 'destroyProduct'])->name('products.destroy');
+    Route::patch('/pesanan/{order}', [SellerController::class, 'updateOrder'])->name('orders.update');
+});
 
 // ==========================================
 // RUTE ADMIN
 // ==========================================
-Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
-
-// ==========================================
-// RUTE PRODUK / SHOP
-// ==========================================
-// Method 'products' diubah menjadi 'shop', dan name 'products' menjadi 'shop'
-Route::get('/shop', [CustomerController::class, 'shop'])->name('shop');
-
-// Rute Kategori
-Route::get('/category', [CustomerController::class, 'categories'])->name('categories');
-
-// Rute About
-Route::get('/about', [CustomerController::class, 'about'])->name('about');
-// Rute Keranjang
-Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
-Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-
-// Rute Contact
-Route::get('/contact', [CustomerController::class, 'contact'])->name('contact');
-
-// Rute Checkout
-Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
-Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::patch('/users/{user}/role', [AdminController::class, 'updateRole'])->name('users.role');
+    Route::patch('/pesanan/{order}/kurir', [AdminController::class, 'assignCourier'])->name('orders.courier');
+});

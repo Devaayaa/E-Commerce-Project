@@ -10,6 +10,8 @@ use App\Http\Controllers\SellerController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\AboutController;
 
 // ==========================================
 // AUTENTIKASI
@@ -30,8 +32,8 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->
 Route::get('/', [CustomerController::class, 'home'])->name('home');
 Route::get('/shop', [CustomerController::class, 'shop'])->name('shop');
 Route::get('/category', [CustomerController::class, 'categories'])->name('categories');
-Route::get('/about', [CustomerController::class, 'about'])->name('about');
 Route::get('/contact', [CustomerController::class, 'contact'])->name('contact');
+Route::get('/about', [AboutController::class, 'index'])->name('about');
 
 // Keranjang (disimpan di session, boleh diakses tanpa login)
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
@@ -66,6 +68,8 @@ Route::middleware(['auth', 'role:courier'])->prefix('kurir')->name('courier.')->
     Route::post('/pesanan/{order}/ambil', [CourierController::class, 'pickup'])->name('pickup');
     Route::post('/pesanan/{order}/selesai', [CourierController::class, 'deliver'])->name('deliver');
 });
+Route::post('/courier/withdraw', [App\Http\Controllers\CourierController::class, 'withdraw'])->name('courier.withdraw');
+Route::post('/courier/profile/update', [App\Http\Controllers\CourierController::class, 'updateProfile'])->name('courier.profile.update');
 
 // ==========================================
 // RUTE PENJUAL (SELLER)
@@ -86,3 +90,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::patch('/users/{user}/role', [AdminController::class, 'updateRole'])->name('users.role');
     Route::patch('/pesanan/{order}/kurir', [AdminController::class, 'assignCourier'])->name('orders.courier');
 });
+
+// ==========================================
+// RUTE PRODUK & BELI SEKARANG
+// ==========================================
+Route::get('/product/{id}', [ProductController::class, 'show'])->name('product.show');
+Route::get('/checkout/{product}', [CheckoutController::class, 'show'])->name('checkout.show');
+Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');

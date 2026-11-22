@@ -22,4 +22,10 @@ class Product extends Model
     ];
 
     public function seller() { return $this->belongsTo(Seller::class); }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
 }
+

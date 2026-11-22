@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Product;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
 class CustomerController extends Controller
@@ -18,8 +19,7 @@ class CustomerController extends Controller
     public function home()
     {
         // Mengambil 4 produk terbaru untuk di Beranda
-        $products = Product::where('stock', '>', 0)->latest()->take(4)->get();
-
+        $products = Product::where('stock', '>', 0)->latest()->take(5)->get();
         return view('customer.home', compact('products'));
     }
 
@@ -65,7 +65,7 @@ class CustomerController extends Controller
      */
     public function tracking($order_id = null)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (! $order_id) {
             $orders = Order::visibleTo($user)
@@ -93,7 +93,7 @@ class CustomerController extends Controller
             ->where('order_number', $order_id)
             ->firstOrFail();
 
-        abort_unless($order->isVisibleTo(auth()->user()), 403);
+        abort_unless($order->isVisibleTo(Auth::user()), 403);
 
         $courier = $order->courier;
 

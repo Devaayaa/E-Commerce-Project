@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Courier;
 use App\Models\Seller;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -43,15 +44,25 @@ class DatabaseSeeder extends Seeder
         // --- Kurir ---
         $courierUser = User::updateOrCreate(
             ['email' => 'courier@loka.test'],
-            ['name' => 'Budi Santoso', 'password' => 'password', 'role' => User::ROLE_COURIER]
+            [
+                'name' => 'Budi Santoso', 
+                'password' => ('1234'), 
+                'role' => User::ROLE_COURIER ?? 'courier' // Antisipasi jika konstanta belum ada
+            ]
         );
+
         Courier::updateOrCreate(
             ['user_id' => $courierUser->id],
             [
                 'phone' => '081200000002',
                 'vehicle_type' => 'motor',
                 'vehicle_plate' => 'B 1234 XYZ',
-                'status' => 'available',
+                
+                // 💡 DISESUAIKAN: Set 'offline' agar Anda bisa menguji tombol "MULAI KERJA"
+                // Jika diset 'available', kurir langsung online saat login.
+                'status' => 'offline', 
+                
+                // Koordinat awal (Misal: Jakarta Pusat)
                 'current_latitude' => -6.2100000,
                 'current_longitude' => 106.8300000,
                 'last_location_update' => now(),

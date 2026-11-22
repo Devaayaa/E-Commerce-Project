@@ -65,7 +65,7 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('home')->with('success', 'Akun berhasil dibuat. Selamat datang di Loka!');
+        return redirect()->route('home')->with('success', 'Account successfully created. Welcome to Loka!');
     }
 
     public function logout(Request $request)

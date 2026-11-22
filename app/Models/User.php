@@ -3,7 +3,9 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
 use Database\Factories\UserFactory;
+use App\Models\Customer;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -102,6 +104,12 @@ class User extends Authenticatable
     /** Pastikan user punya profil pelanggan (dibutuhkan untuk membuat order). */
     public function ensureCustomerProfile(): Customer
     {
-        return $this->customer()->firstOrCreate([]);
+        return $this->customer()->firstOrCreate(
+            ['user_id' => $this->id],
+            [
+                'phone'   => '',
+                'address' => '',
+            ]
+        );
     }
 }

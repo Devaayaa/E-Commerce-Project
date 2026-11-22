@@ -6,6 +6,9 @@ use App\Models\Courier;
 use App\Models\CourierLocation;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\User;
+use App\Models\Withdrawal;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -38,12 +41,18 @@ class CourierController extends Controller
         $status = $request->validate(['status' => ['required', Rule::in(['available', 'offline'])]])['status'];
 
         if ($status === 'offline' && $courier->status === 'on_delivery') {
-            return back()->with('error', 'Selesaikan pengantaran yang sedang berjalan sebelum offline.');
+            $msg = 'Please complete your ongoing delivery before going offline.';
+            return $request->wantsJson() ? response()->json(['error' => $msg], 400) : back()->with('error', $msg);
         }
 
         $courier->update(['status' => $status]);
+        $msg = $status === 'available' ? 'You are now online.' : 'You are now offline.';
 
-        return back()->with('success', $status === 'available' ? 'Anda sekarang online.' : 'Anda sekarang offline.');
+        if ($request->wantsJson()) {
+            return response()->json(['success' => $msg, 'status' => $status]);
+        }
+
+        return back()->with('success', $msg);
     }
 
     /** Kurir mengambil paket dari toko → status order "shipped". */
@@ -106,9 +115,8 @@ class CourierController extends Controller
             'last_location_update' => now(),
         ]);
 
-        // Simpan jejak perjalanan untuk setiap order yang sedang diantar.
         $courier->orders()->where('status', Order::STATUS_SHIPPED)->pluck('id')->each(
-            fn ($orderId) => CourierLocation::create([
+            fn($orderId) => CourierLocation::create([
                 'courier_id' => $courier->id,
                 'order_id' => $orderId,
                 'latitude' => $data['latitude'],
@@ -119,11 +127,81 @@ class CourierController extends Controller
         return response()->json(['ok' => true, 'updated_at' => now()->toIso8601String()]);
     }
 
+    /** Helper untuk mendapatkan data kurir yang sedang login. */
     private function courier(): Courier
     {
-        $courier = auth()->user()->courier;
+        $courier = Auth::user()->courier;
+
         abort_unless($courier, 403, 'Akun Anda belum terdaftar sebagai kurir. Hubungi admin.');
 
         return $courier;
+    }
+
+    /** Proses penarikan saldo (Withdraw) */
+    public function withdraw(Request $request)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:50000',
+            'bank_name' => 'required|string',
+            'account_number' => 'required|string',
+            'account_name' => 'required|string',
+        ]);
+
+        $courier = Auth::user()->courier;
+
+        if (!$courier) {
+            return response()->json(['error' => 'Courier profile not found.'], 404);
+        }
+
+        if ($request->amount > $courier->balance) {
+            return response()->json(['error' => 'Insufficient balance.'], 400);
+        }
+
+        // Kurangi saldo
+        $courier->decrement('balance', $request->amount);
+
+        // Catat riwayat penarikan
+        Withdrawal::create([
+            'courier_id' => Auth::id(),
+            'amount' => $request->amount,
+            'bank_name' => $request->bank_name,
+            'account_number' => $request->account_number,
+            'account_name' => $request->account_name,
+            'status' => 'pending'
+        ]);
+
+        return response()->json(['success' => 'Withdrawal requested successfully! Waiting for Admin approval.']);
+    }
+
+    /** Update Profil Kurir */
+    public function updateProfile(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
+            'vehicle_type' => 'required|string',
+            'vehicle_plate' => 'required|string',
+        ]);
+
+        /** @var User $user */
+        $user = Auth::user();
+
+        $user->update([
+            'name' => $request->name
+        ]);
+
+        $courier = $user->courier;
+
+        if ($courier) {
+            $courier->update([
+                'phone' => $request->phone,
+                'vehicle_type' => $request->vehicle_type,
+                'vehicle_plate' => $request->vehicle_plate,
+            ]);
+        }
+
+        return response()->json([
+            'success' => 'Profile updated successfully!'
+        ]);
     }
 }

@@ -63,6 +63,17 @@
                 </div>
             </div>
 
+            {{-- GRAFIK PENJUALAN --}}
+            <section class="lg lg-soft rounded-[2rem] p-5 sm:p-6">
+                <div class="flex items-center gap-3 mb-5"><span class="h-5 w-1 rounded-full bg-gradient-to-b from-amber-300 to-amber-500"></span><h3 class="font-bold text-lg text-slate-900">Grafik Penjualan</h3></div>
+                @if($salesChart->isEmpty())
+                    <p class="text-center text-slate-600 py-6">Belum ada penjualan selesai untuk ditampilkan.</p>
+                @else
+                    <p class="text-xs text-slate-600 mb-3">10 produk terlaris dari pesanan yang sudah selesai.</p>
+                    <div class="relative h-72"><canvas id="sales-chart" aria-label="Grafik produk terjual" role="img"></canvas></div>
+                @endif
+            </section>
+
             {{-- PESANAN MASUK --}}
             <section class="lg lg-soft rounded-[2rem] p-5 sm:p-6">
                 <div class="flex items-center gap-3 mb-5"><span class="h-5 w-1 rounded-full bg-gradient-to-b from-amber-300 to-amber-500"></span><h3 class="font-bold text-lg text-slate-900">Pesanan Masuk</h3></div>
@@ -107,7 +118,7 @@
             {{-- TAMBAH PRODUK --}}
             <section class="lg lg-soft rounded-[2rem] p-5 sm:p-6">
                 <div class="flex items-center gap-3 mb-5"><span class="h-5 w-1 rounded-full bg-gradient-to-b from-amber-300 to-amber-500"></span><h3 class="font-bold text-lg text-slate-900">Tambah Produk</h3></div>
-                <form action="{{ route('seller.products.store') }}" method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <form action="{{ route('seller.products.store') }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     @csrf
                     <input type="text" name="name" value="{{ old('name') }}" placeholder="Nama produk" aria-label="Nama produk" required class="md:col-span-2 {{ $f }}">
                     <select name="category" required aria-label="Kategori" class="{{ $f }}">
@@ -121,6 +132,12 @@
                     <input type="number" name="discount" value="{{ old('discount') }}" placeholder="Diskon % (opsional)" aria-label="Diskon" min="0" max="90" class="{{ $f }}">
                     <input type="number" name="stock" value="{{ old('stock') }}" placeholder="Stok" aria-label="Stok" min="0" required class="{{ $f }}">
                     <textarea name="description" rows="2" placeholder="Deskripsi singkat" aria-label="Deskripsi" class="md:col-span-3 resize-none {{ $f }}">{{ old('description') }}</textarea>
+                    <div class="md:col-span-3">
+                        <label class="block text-sm font-semibold mb-2 text-slate-800" for="product-image">Gambar Produk</label>
+                        <input id="product-image" type="file" name="image" accept="image/png,image/jpeg,image/webp" class="{{ $f }} w-full">
+                        <p class="text-[11px] text-slate-500 mt-1">JPG, PNG, atau WebP. Maksimal 2 MB.</p>
+                        @error('image')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
                     <button type="submit" class="lg lg-gold lg-btn h-11 self-end rounded-full text-sm font-bold">Simpan Produk</button>
                 </form>
             </section>
@@ -142,19 +159,26 @@
                         <tbody>
                             @forelse($products as $p)
                             <tr class="border-b border-white/50 align-middle">
-                                <td class="py-3 pr-4 font-semibold text-slate-900">{{ $p->emoji ?? '📦' }} {{ $p->name }}</td>
+                                <td class="py-3 pr-4 font-semibold text-slate-900">
+                                    <div class="flex items-center gap-3">
+                                        <img src="{{ $p->image ? (\Illuminate\Support\Str::startsWith($p->image, ['http', '/']) ? $p->image : asset('storage/'.$p->image)) : asset('images/no-product.png') }}"
+                                             alt="{{ $p->name }}" class="w-14 h-14 rounded-xl object-cover bg-white/40" loading="lazy">
+                                        <div>{{ $p->emoji ?? '📦' }} {{ $p->name }}</div>
+                                    </div>
+                                </td>
                                 <td class="py-3 pr-4 text-slate-600">{{ ucfirst($p->category ?? '-') }}</td>
                                 <td class="py-3 pr-4 text-slate-600">{{ $p->sold }}</td>
                                 <td class="py-3 pr-4">
-                                    <form action="{{ route('seller.products.update', $p) }}" method="POST" class="flex items-center gap-2">
+                                    <form action="{{ route('seller.products.update', $p) }}" method="POST" enctype="multipart/form-data" class="flex flex-wrap items-center gap-2">
                                         @csrf @method('PATCH')
                                         <input type="number" name="price" value="{{ (int) $p->price }}" min="0" aria-label="Harga" class="w-28 {{ $sf }}">
                                         <input type="number" name="stock" value="{{ $p->stock }}" min="0" aria-label="Stok" class="w-20 {{ $sf }}">
+                                        <input type="file" name="image" accept="image/png,image/jpeg,image/webp" aria-label="Ganti gambar" class="text-xs w-full max-w-48">
                                         <button class="lg lg-soft lg-btn h-8 px-4 rounded-full text-xs font-bold text-sky-700">Update</button>
                                     </form>
                                 </td>
                                 <td class="py-3 text-right">
-                                    <form action="{{ route('seller.products.destroy', $p) }}" method="POST" onsubmit="return confirm('Hapus produk ini?')">
+                                    <form action="{{ route('seller.products.destroy', $p) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus produk {{ addslashes($p->name) }}? Produk yang dihapus tidak dapat dikembalikan.')">
                                         @csrf @method('DELETE')
                                         <button class="lg lg-soft lg-btn h-8 px-4 rounded-full text-xs font-bold text-red-600">Hapus</button>
                                     </form>
@@ -171,4 +195,47 @@
         </div>
     </div>
 </main>
+
+@if($salesChart->isNotEmpty())
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+    (function () {
+        var el = document.getElementById('sales-chart');
+        if (!el || typeof Chart === 'undefined') return;
+        var data = @json($salesChart);
+        new Chart(el, {
+            type: 'bar',
+            data: {
+                labels: data.map(function (d) { return d.product_name; }),
+                datasets: [{
+                    label: 'Jumlah terjual',
+                    data: data.map(function (d) { return Number(d.total_sold); }),
+                    backgroundColor: 'rgba(14, 165, 233, 0.6)',
+                    borderColor: 'rgb(2, 132, 199)',
+                    borderWidth: 1,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            afterLabel: function (ctx) {
+                                var rev = Number(data[ctx.dataIndex].total_revenue);
+                                return 'Pendapatan: Rp ' + rev.toLocaleString('id-ID');
+                            }
+                        }
+                    }
+                },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
+    })();
+</script>
+@endpush
+@endif
 @endsection

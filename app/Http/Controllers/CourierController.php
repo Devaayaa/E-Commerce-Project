@@ -149,26 +149,33 @@ class CourierController extends Controller
 
         $courier = Auth::user()->courier;
 
-        if (!$courier) {
+        if (! $courier) {
             return response()->json(['error' => 'Courier profile not found.'], 404);
         }
 
-        if ($request->amount > $courier->balance) {
-            return response()->json(['error' => 'Insufficient balance.'], 400);
+        try {
+            DB::transaction(function () use ($request, $courier) {
+                // Kunci baris kurir agar dua request bersamaan tidak bisa menarik saldo ganda
+                $locked = Courier::whereKey($courier->id)->lockForUpdate()->first();
+
+                if ($request->amount > $locked->balance) {
+                    throw new \RuntimeException('Insufficient balance.');
+                }
+
+                $locked->decrement('balance', $request->amount);
+
+                Withdrawal::create([
+                    'courier_id' => $locked->id,
+                    'amount' => $request->amount,
+                    'bank_name' => $request->bank_name,
+                    'account_number' => $request->account_number,
+                    'account_name' => $request->account_name,
+                    'status' => 'pending',
+                ]);
+            });
+        } catch (\RuntimeException $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
         }
-
-        // Kurangi saldo
-        $courier->decrement('balance', $request->amount);
-
-        // Catat riwayat penarikan
-        Withdrawal::create([
-            'courier_id' => Auth::id(),
-            'amount' => $request->amount,
-            'bank_name' => $request->bank_name,
-            'account_number' => $request->account_number,
-            'account_name' => $request->account_name,
-            'status' => 'pending'
-        ]);
 
         return response()->json(['success' => 'Withdrawal requested successfully! Waiting for Admin approval.']);
     }

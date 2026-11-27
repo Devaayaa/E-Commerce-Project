@@ -979,7 +979,7 @@
                     pos => {
                         setGpsState(true, 'GPS Active');
                         const now = Date.now();
-                        if (now - lastSent < 8000) return;
+                        if (now - lastSent < 15000) return;
                         lastSent = now;
                         fetch(locationUrl, {
                             method: 'POST',
@@ -995,9 +995,9 @@
                         }).catch(() => {});
                     },
                     () => setGpsState(false, 'GPS Denied'), {
-                        enableHighAccuracy: true,
-                        maximumAge: 5000,
-                        timeout: 20000
+                        enableHighAccuracy: false,
+                        maximumAge: 15000,
+                        timeout: 30000
                     }
                 );
             }
@@ -2603,7 +2603,7 @@
             watchId = navigator.geolocation.watchPosition(function(pos) {
                 setGps(true, 'GPS Active');
                 var now = Date.now();
-                if (now - last < 8000) return;
+                if (now - last < 15000) return;
                 last = now;
                 fetch(D.routeLocation, {
                     method: 'POST',
@@ -2616,9 +2616,9 @@
             }, function() {
                 setGps(false, 'GPS Denied');
             }, {
-                enableHighAccuracy: true,
-                maximumAge: 5000,
-                timeout: 20000
+                enableHighAccuracy: false,
+                maximumAge: 15000,
+                timeout: 30000
             });
         }
 

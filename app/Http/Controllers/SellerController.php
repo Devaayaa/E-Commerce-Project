@@ -7,6 +7,8 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Seller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class SellerController extends Controller
@@ -25,13 +27,32 @@ class SellerController extends Controller
         $products = $seller->products()->latest()->get();
         $orders = $seller->orders()->with(['items', 'courier.user'])->latest()->take(30)->get();
 
-        return view('layouts.seller.dashboard', compact('seller', 'stats', 'products', 'orders'));
+        // Grafik: 10 produk terlaris dari pesanan yang sudah selesai (delivered)
+        $salesChart = DB::table('order_items')
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->where('orders.seller_id', $seller->id)
+            ->where('orders.status', Order::STATUS_DELIVERED)
+            ->select(
+                'order_items.product_name',
+                DB::raw('SUM(order_items.quantity) as total_sold'),
+                DB::raw('SUM(order_items.price * order_items.quantity) as total_revenue')
+            )
+            ->groupBy('order_items.product_name')
+            ->orderByDesc('total_sold')
+            ->limit(10)
+            ->get();
+
+        return view('layouts.seller.dashboard', compact('seller', 'stats', 'products', 'orders', 'salesChart'));
     }
 
     public function storeProduct(Request $request)
     {
         $seller = $this->seller();
         $data = $this->validateProduct($request);
+
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('products', 'public');
+        }
 
         $seller->products()->create($data);
 
@@ -46,7 +67,19 @@ class SellerController extends Controller
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'price' => ['sometimes', 'required', 'numeric', 'min:0'],
             'stock' => ['sometimes', 'required', 'integer', 'min:0'],
+            'image' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
+
+        if ($request->hasFile('image')) {
+            // Hapus file lama hanya jika berupa file upload lokal (bukan URL eksternal)
+            if ($product->image && ! preg_match('#^(https?:)?/#', $product->image)) {
+                Storage::disk('public')->delete($product->image);
+            }
+
+            $data['image'] = $request->file('image')->store('products', 'public');
+        } else {
+            unset($data['image']);
+        }
 
         $product->update($data);
 
@@ -56,6 +89,11 @@ class SellerController extends Controller
     public function destroyProduct(Product $product)
     {
         $this->authorizeProduct($product);
+
+        if ($product->image && ! preg_match('#^(https?:)?/#', $product->image)) {
+            Storage::disk('public')->delete($product->image);
+        }
+
         $product->delete(); // order_items.product_id otomatis NULL, riwayat tetap aman
 
         return back()->with('success', 'Produk dihapus.');
@@ -117,6 +155,7 @@ class SellerController extends Controller
             'original_price' => ['nullable', 'numeric', 'min:0'],
             'discount' => ['nullable', 'integer', 'between:0,90'],
             'stock' => ['required', 'integer', 'min:0'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
     }
 }

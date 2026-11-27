@@ -39,6 +39,17 @@
             <form action="{{ route('register.post') }}" method="POST" class="space-y-4">
                 @csrf
 
+                @php $type = old('account_type', 'customer'); @endphp
+                <div>
+                    <label class="{{ $label }}" for="account_type">Account Type</label>
+                    <select id="account_type" name="account_type" class="{{ $field }}" required>
+                        <option value="customer" @selected($type === 'customer')>Customer — I want to shop</option>
+                        <option value="seller" @selected($type === 'seller')>Seller — I want to sell products</option>
+                        <option value="courier" @selected($type === 'courier')>Courier — I want to deliver orders</option>
+                    </select>
+                    @error('account_type')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                </div>
+
                 <div>
                     <label class="{{ $label }}" for="name">Full Name</label>
                     <input id="name" type="text" name="name" value="{{ old('name') }}" placeholder="Your name" autocomplete="name" class="{{ $field }}" required>
@@ -62,6 +73,44 @@
                     @error('password')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                 </div>
 
+                {{-- Field khusus Seller --}}
+                <div data-role-fields="seller" class="space-y-4 hidden">
+                    <div>
+                        <label class="{{ $label }}" for="store_name">Store Name</label>
+                        <input id="store_name" type="text" name="store_name" value="{{ old('store_name') }}" placeholder="Your store name" class="{{ $field }}">
+                        @error('store_name')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label class="{{ $label }}" for="store_address">Store Address</label>
+                        <textarea id="store_address" name="store_address" rows="2" placeholder="Store address" class="{{ $field }} resize-none">{{ old('store_address') }}</textarea>
+                        @error('store_address')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    </div>
+                </div>
+
+                {{-- Field khusus Courier --}}
+                <div data-role-fields="courier" class="space-y-4 hidden">
+                    <div>
+                        <label class="{{ $label }}" for="vehicle_type">Vehicle Type</label>
+                        <select id="vehicle_type" name="vehicle_type" class="{{ $field }}">
+                            <option value="motor" @selected(old('vehicle_type', 'motor') === 'motor')>Motorcycle</option>
+                            <option value="mobil" @selected(old('vehicle_type') === 'mobil')>Car</option>
+                        </select>
+                        @error('vehicle_type')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label class="{{ $label }}" for="vehicle_plate">License Plate</label>
+                        <input id="vehicle_plate" type="text" name="vehicle_plate" value="{{ old('vehicle_plate') }}" placeholder="e.g., BM 1234 AB" class="{{ $field }}">
+                        @error('vehicle_plate')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    </div>
+                </div>
+
+                {{-- Nomor HP: Seller & Courier --}}
+                <div data-role-fields="seller courier" class="hidden">
+                    <label class="{{ $label }}" for="phone">Phone Number</label>
+                    <input id="phone" type="tel" name="phone" value="{{ old('phone') }}" placeholder="081234567890" autocomplete="tel" class="{{ $field }}">
+                    @error('phone')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                </div>
+
                 <button type="submit" class="lg lg-gold lg-btn w-full h-12 rounded-full text-sm font-bold mt-2">Create Account</button>
             </form>
 
@@ -73,4 +122,28 @@
         </div>
     </div>
 </main>
+
+@push('scripts')
+<script>
+    (function () {
+        var select = document.getElementById('account_type');
+        if (!select) return;
+        var groups = document.querySelectorAll('[data-role-fields]');
+
+        function sync() {
+            groups.forEach(function (g) {
+                var show = g.dataset.roleFields.split(' ').indexOf(select.value) !== -1;
+                g.classList.toggle('hidden', !show);
+                // field tersembunyi dinonaktifkan agar tidak ikut tervalidasi/terkirim
+                g.querySelectorAll('input, select, textarea').forEach(function (el) {
+                    el.disabled = !show;
+                    el.required = show && el.name !== 'vehicle_type';
+                });
+            });
+        }
+        select.addEventListener('change', sync);
+        sync();
+    })();
+</script>
+@endpush
 @endsection

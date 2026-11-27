@@ -49,6 +49,7 @@ Route::middleware('auth')->group(function () {
     // Checkout hanya untuk pelanggan
     Route::middleware('role:customer')->group(function () {
         Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
+        Route::get('/checkout/{product}', [CheckoutController::class, 'show'])->name('checkout.show');
         Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
     });
 
@@ -67,9 +68,9 @@ Route::middleware(['auth', 'role:courier'])->prefix('kurir')->name('courier.')->
     Route::post('/lokasi', [CourierController::class, 'updateLocation'])->name('location');
     Route::post('/pesanan/{order}/ambil', [CourierController::class, 'pickup'])->name('pickup');
     Route::post('/pesanan/{order}/selesai', [CourierController::class, 'deliver'])->name('deliver');
+    Route::post('/withdraw', [CourierController::class, 'withdraw'])->name('withdraw');
+    Route::post('/profile/update', [CourierController::class, 'updateProfile'])->name('profile.update');
 });
-Route::post('/courier/withdraw', [App\Http\Controllers\CourierController::class, 'withdraw'])->name('courier.withdraw');
-Route::post('/courier/profile/update', [App\Http\Controllers\CourierController::class, 'updateProfile'])->name('courier.profile.update');
 
 // ==========================================
 // RUTE PENJUAL (SELLER)
@@ -92,8 +93,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 });
 
 // ==========================================
-// RUTE PRODUK & BELI SEKARANG
+// RUTE PRODUK (detail produk publik; Buy Now ada di grup checkout pelanggan)
 // ==========================================
 Route::get('/product/{id}', [ProductController::class, 'show'])->name('product.show');
-Route::get('/checkout/{product}', [CheckoutController::class, 'show'])->name('checkout.show');
-Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');

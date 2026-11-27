@@ -61,7 +61,8 @@ class CheckoutController extends Controller
         $qty     = max(1, min(99, (int) $request->query('qty', 1)));
 
         if ($product->stock < $qty) {
-            return back()->with('error', "Insufficient stock for \"{$product->name}\" ({$product->stock} left).");
+            return redirect()->route('product.show', $product->id)
+                ->with('error', "Insufficient stock for \"{$product->name}\" ({$product->stock} left).");
         }
 
         session()->put('buy_now_item', [

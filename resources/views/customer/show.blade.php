@@ -47,7 +47,11 @@ $stars = fn ($n) => str_repeat('★', (int) round($n)) . str_repeat('☆', 5 - (
                     <span class="absolute top-5 left-5 z-10 bg-gradient-to-r from-amber-400 to-orange-400 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-[0_4px_12px_rgba(251,146,60,.45)]">-{{ $disc }}%</span>
                     @endif
                     <span class="absolute w-64 h-64 rounded-full bg-amber-300/50 blur-3xl" aria-hidden="true"></span>
+                    @if($product->image)
+                    <img data-fly-src src="{{ \Illuminate\Support\Str::startsWith($product->image, ['http', '/']) ? $product->image : asset('storage/'.$product->image) }}" alt="{{ $product->name }}" class="relative block w-full h-full max-h-[480px] object-cover">
+                    @else
                     <span data-fly-src class="float-y relative block text-[9rem] leading-none">{{ $emoji }}</span>
+                    @endif
                 </div>
 
                 {{-- Product Info --}}

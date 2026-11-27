@@ -102,7 +102,11 @@ $cats = ['' => 'All', 'fashion' => 'Fashion', 'electronics' => 'Electronics', 'b
                         <span class="absolute w-28 h-28 rounded-full bg-amber-300/40 blur-2xl transition-colors duration-500 group-hover:bg-amber-300/70" aria-hidden="true"></span>
                         {{-- klik gambar → halaman detail produk (instan) --}}
                         <a href="{{ route('product.show', $p->id) }}" data-instant class="float-y relative">
+                            @if($p->image)
+                            <img data-fly-src src="{{ \Illuminate\Support\Str::startsWith($p->image, ['http', '/']) ? $p->image : asset('storage/'.$p->image) }}" alt="{{ $p->name }}" loading="lazy" class="block w-32 h-32 object-cover rounded-2xl transition-transform duration-500 group-hover:scale-110">
+                            @else
                             <span data-fly-src class="block text-7xl transition-transform duration-500 group-hover:scale-110">{{ $p->emoji ?? '📦' }}</span>
+                            @endif
                         </a>
                     </div>
 
